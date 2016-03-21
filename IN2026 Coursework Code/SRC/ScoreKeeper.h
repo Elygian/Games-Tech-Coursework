@@ -22,6 +22,11 @@ public:
 		if (object->GetType() == GameObjectType("Asteroid")) {
  			mScore += 10;
 			FireScoreChanged();
+			//Create a text file and write the value of 'mScore' to it as a string
+			ofstream highScore;
+			highScore.open("highScore.txt");
+			highScore << mScore;
+			highScore.close();
 		}
 	}
 
