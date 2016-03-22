@@ -152,7 +152,7 @@ void Asteroids::OnSpecialKeyReleased(int key, int x, int y)
 		switch (key)
 		{
 			// If up arrow key is released stop applying forward thrust
-		case GLUT_KEY_UP: mSpaceship->Thrust(15); break;
+		case GLUT_KEY_UP: mSpaceship->Thrust(0); break;
 			// If left arrow key is released stop rotating
 		case GLUT_KEY_LEFT: mSpaceship->Rotate(0); break;
 			// If right arrow key is released stop rotating
