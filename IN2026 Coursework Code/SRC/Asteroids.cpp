@@ -7,6 +7,7 @@
 #include "GameWorld.h"
 #include "GameDisplay.h"
 #include "Spaceship.h"
+#include "DemoSpaceship.h"
 #include "BoundingShape.h"
 #include "BoundingSphere.h"
 #include "GUILabel.h"
@@ -63,8 +64,9 @@ void Asteroids::Start()
 	Animation *asteroid1_anim = AnimationManager::GetInstance().CreateAnimationFromFile("asteroid1", 128, 8192, 128, 128, "asteroid1_fs.png");
 	Animation *spaceship_anim = AnimationManager::GetInstance().CreateAnimationFromFile("spaceship", 128, 128, 128, 128, "spaceship_fs.png");
 
-	// Create a spaceship and add it to the world
-	//mGameWorld->AddObject(CreateSpaceship());
+	// Create a demo spaceship and add it to the world
+	mGameWorld->AddObject(CreateDemoSpaceship());
+
 	// Create some asteroids and add them to the world
 	CreateAsteroids(10);
 
@@ -132,7 +134,7 @@ void Asteroids::OnSpecialKeyPressed(int key, int x, int y)
 		switch (key)
 		{
 			// If up arrow key is pressed start applying forward thrust
-		case GLUT_KEY_UP: mSpaceship->Thrust(20); break;
+		case GLUT_KEY_UP: mSpaceship->Thrust(15); break;
 			// If left arrow key is pressed start rotating anti-clockwise
 		case GLUT_KEY_LEFT: mSpaceship->Rotate(150); break;
 			// If right arrow key is pressed start rotating clockwise
@@ -150,7 +152,7 @@ void Asteroids::OnSpecialKeyReleased(int key, int x, int y)
 		switch (key)
 		{
 			// If up arrow key is released stop applying forward thrust
-		case GLUT_KEY_UP: mSpaceship->Thrust(10); break;
+		case GLUT_KEY_UP: mSpaceship->Thrust(15); break;
 			// If left arrow key is released stop rotating
 		case GLUT_KEY_LEFT: mSpaceship->Rotate(0); break;
 			// If right arrow key is released stop rotating
@@ -184,6 +186,11 @@ void Asteroids::OnObjectRemoved(GameWorld* world, shared_ptr<GameObject> object)
 
 void Asteroids::OnTimer(int value)
 {
+	if (value == CREATE_NEW_DEMO)
+	{
+		mDemoSpaceship->Reset();
+		mGameWorld->AddObject(mDemoSpaceship);
+	}
 	if (value == CREATE_NEW_PLAYER)
 	{
 		mSpaceship->Reset();
@@ -223,6 +230,25 @@ shared_ptr<GameObject> Asteroids::CreateSpaceship()
 	// Return the spaceship so it can be added to the world
 	return mSpaceship;
 
+}
+
+shared_ptr<GameObject> Asteroids::CreateDemoSpaceship()
+{
+	// Create a raw pointer to a spaceship that can be converted to
+	// shared_ptrs of different types because GameWorld implements IRefCount
+	mDemoSpaceship = make_shared<DemoSpaceship>();
+	mDemoSpaceship->SetBoundingShape(make_shared<BoundingSphere>(mDemoSpaceship->GetThisPtr(), 4.0f));
+	shared_ptr<Shape> bullet_shape = make_shared<Shape>("bullet.shape");
+	mDemoSpaceship->SetDemoBulletShape(bullet_shape);
+	Animation *anim_ptr = AnimationManager::GetInstance().GetAnimationByName("spaceship");
+	shared_ptr<Sprite> spaceship_sprite =
+		make_shared<Sprite>(anim_ptr->GetWidth(), anim_ptr->GetHeight(), anim_ptr);
+	mDemoSpaceship->SetSprite(spaceship_sprite);
+	mDemoSpaceship->SetScale(0.1f);
+	// Reset demo spaceship back to centre of the world
+	mDemoSpaceship->Reset();
+	// Return the demo spaceship so it can be added to the world
+	return mDemoSpaceship;
 }
 
 void Asteroids::CreateAsteroids(const uint num_asteroids)
@@ -341,6 +367,26 @@ void Asteroids::OnPlayerKilled(int lives_left)
 	}
 }
 
+void Asteroids::OnDemoKilled(int lives_left)
+{
+	shared_ptr<GameObject> explosion = CreateExplosion();
+	explosion->SetPosition(mDemoSpaceship->GetPosition());
+	explosion->SetRotation(mDemoSpaceship->GetRotation());
+	mGameWorld->AddObject(explosion);
+
+	// Format the lives left message using an string-based stream
+	std::ostringstream msg_stream;
+	msg_stream << "Lives: " << lives_left;
+	// Get the lives left message as a string
+	std::string lives_msg = msg_stream.str();
+	mLivesLabel->SetText(lives_msg);
+
+	if (lives_left > 0)
+	{
+		SetTimer(1000, CREATE_NEW_DEMO);
+	}
+}
+
 shared_ptr<GameObject> Asteroids::CreateExplosion()
 {
 	Animation *anim_ptr = AnimationManager::GetInstance().GetAnimationByName("explosion");
@@ -352,7 +398,5 @@ shared_ptr<GameObject> Asteroids::CreateExplosion()
 	explosion->Reset();
 	return explosion;
 }
-
-
 
 

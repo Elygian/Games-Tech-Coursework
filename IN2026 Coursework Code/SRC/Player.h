@@ -24,6 +24,9 @@ public:
 			mLives -= 1;
 			FirePlayerKilled();
 		}
+		else if (object->GetType() == GameObjectType("DemoSpaceship")) {
+			FireDemoKilled();
+		}
 	}
 
 	void AddListener(shared_ptr<IPlayerListener> listener)
@@ -37,6 +40,15 @@ public:
 		for (PlayerListenerList::iterator lit = mListeners.begin();
 			lit != mListeners.end(); ++lit) {
 			(*lit)->OnPlayerKilled(mLives);
+		}
+	}
+
+	void FireDemoKilled()
+	{
+		// Send message to all listeners
+		for (PlayerListenerList::iterator lit = mListeners.begin();
+		lit != mListeners.end(); ++lit) {
+			(*lit)->OnDemoKilled(mLives);
 		}
 	}
 
